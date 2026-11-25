@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ToolBox – Free online PDF, image, text tools and more</title>
+<meta name="description" content="Free browser-based PDF, image and text tools. Your files stay on your device.">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f7f8fb;--card:#fff;--tx:#14171f;--mu:#667085;--bd:#e3e6ee;--ac:#4f46e5;--ac2:#eef0ff}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1117;--card:#181b24;--tx:#eef0f6;--mu:#98a2b3;--bd:#2a2e3a;--ac:#8b86ff;--ac2:#232648}}
+:root[data-theme="dark"]{--bg:#0f1117;--card:#181b24;--tx:#eef0f6;--mu:#98a2b3;--bd:#2a2e3a;--ac:#8b86ff;--ac2:#232648}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;max-width:960px;margin:auto}
+.logo{font-weight:800;font-size:20px;color:var(--tx);text-decoration:none}.logo span{color:var(--ac)}
+button,.btn{font:inherit;cursor:pointer}.ic{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:6px 10px;color:var(--tx)}
+main{max-width:960px;margin:auto;padding:0 16px 40px}
+.hero{text-align:center;padding:24px 0 12px}.hero h1{font-size:28px;line-height:1.2;margin:0 0 8px}.hero p{color:var(--mu);margin:0 0 16px}
+input,textarea,select{width:100%;font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px}
+h2{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin:24px 0 8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.card{display:block;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;color:var(--tx);text-decoration:none}
+.card b{display:block}.card small{color:var(--mu)}a.card:hover{border-color:var(--ac)}.card.soon{opacity:.55}
+.tag{font-size:11px;background:var(--ac2);color:var(--ac);border-radius:6px;padding:1px 6px}
+.panel{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px;margin-top:12px}
+.drop{display:block;border:2px dashed var(--bd);border-radius:14px;padding:28px 12px;text-align:center;cursor:pointer}
+.drop.on{border-color:var(--ac);background:var(--ac2)}.drop small{display:block;color:var(--mu)}
+.btn{background:var(--ac);color:#fff;border:0;border-radius:12px;padding:12px 18px;font-weight:600;text-decoration:none;display:inline-block;margin:6px 6px 0 0}
+.btn.sec{background:var(--ac2);color:var(--ac)}.row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.row>*{flex:1;min-width:100px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-top:10px}.stats div{background:var(--ac2);border-radius:10px;padding:8px;text-align:center}.stats b{display:block;font-size:20px}.stats span{font-size:12px;color:var(--mu)}
+.st{color:var(--mu);min-height:1.5em}.err{color:#d92d20}.ok{color:#079455}
+footer{max-width:960px;margin:auto;padding:16px;color:var(--mu);font-size:13px;text-align:center}
+.mono{font-family:ui-monospace,Menlo,monospace;word-break:break-all;font-size:18px}
+.note{font-size:14px;color:var(--mu)}
+#rv{background:#fff;color:#000;border:1px solid var(--bd);border-radius:8px;padding:20px;font:13px/1.45 Arial,Helvetica,sans-serif;overflow-wrap:anywhere}#rv h1{font-size:22px;margin:0 0 2px}#rv h3{font-size:13px;border-bottom:1px solid #000;margin:14px 0 4px;text-transform:uppercase;color:#000}#rv ul{margin:2px 0 6px 18px;padding:0}#rv p{margin:2px 0}
+@page{margin:14mm}@media print{body *{visibility:hidden}#rv,#rv *{visibility:visible}#rv{position:absolute;left:0;top:0;width:100%;border:0;padding:0}}
+</style></head><body>
+<header><a class="logo" href="#home">Tool<span>Box</span></a><button class="ic" id="th" aria-label="Toggle theme">◐</button></header>
+<main id="app"></main>
+<footer>Files are processed in your browser and never uploaded. Free tools have a 25 MB per-file limit.<br>No accounts, no tracking, no stored documents. Privacy policy and Terms pages will be added before launch.</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const MAX=25*1024*1024;
+const $=(e,s)=>e.querySelector(s);
+const dl=(blob,name)=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.className='btn';a.textContent='Download '+name;return a};
+
+// Generic file tool: o={a:accept,m:multiple,b:button label,opt:html,run:async(files,box)=>({blob,name})}
+function ft(el,o){
+ el.innerHTML=`<label class="drop"><input type="file" accept="${o.a}" ${o.m?'multiple':''} hidden><b>Tap to choose ${o.m?'files':'a file'}</b><small>or drop here · stays on your device · max 25 MB each</small></label><div id="x">${o.opt||''}</div><p class="st" id="st"></p><button class="btn" id="go">${o.b}</button><div id="out"></div>`;
+ let fs=[];const st=$(el,'#st'),inp=$(el,'input[type=file]'),dz=$(el,'.drop');
+ const pick=l=>{fs=[...l];st.className='st';st.textContent=fs.length?fs.map(f=>f.name+' ('+(f.size/1024).toFixed(0)+' KB)').join(', '):'';if(o.onpick)o.onpick(fs,el)};
+ inp.onchange=()=>pick(inp.files);
+ dz.ondragover=e=>{e.preventDefault();dz.classList.add('on')};dz.ondragleave=()=>dz.classList.remove('on');
+ dz.ondrop=e=>{e.preventDefault();dz.classList.remove('on');pick(e.dataTransfer.files)};
+ $(el,'#go').onclick=async()=>{
+  const out=$(el,'#out');out.innerHTML='';
+  if(!fs.length){st.className='st err';st.textContent='Choose a file first.';return}
+  const big=fs.find(f=>f.size>MAX);if(big){st.className='st err';st.textContent=big.name+' is over the 25 MB free limit.';return}
+  st.className='st';st.textContent='Working…';
+  try{const r=await o.run(fs,$(el,'#x'));out.appendChild(dl(r.blob,r.name));st.className='st ok';st.textContent='Done. '+(r.msg||'')}
+  catch(e){st.className='st err';st.textContent='Failed: '+(e.message||e)+'. Nothing was produced.'}
+ };
+}
+
+async function imgToCanvas(f,w,h,fill){const bm=await createImageBitmap(f);const c=document.createElement('canvas');c.width=w||bm.width;c.height=h||bm.height;const x=c.getContext('2d');if(fill){x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height)}x.drawImage(bm,0,0,c.width,c.height);return c}
+const blobOf=(c,t,q)=>new Promise((r,j)=>c.toBlob(b=>b?r(b):j(new Error('Browser could not encode this format')),t,q));
+
+const TOOLS=[
+{id:'word-counter',n:'Word Counter',c:'Text',d:'Words, characters, reading time',f(el){
+ el.innerHTML=`<textarea id="t" rows="9" placeholder="Paste or type text"></textarea><div class="stats" id="s"></div>`;
+ const t=$(el,'#t'),s=$(el,'#s');const u=()=>{const v=t.value,w=(v.trim().match(/\S+/g)||[]).length;
+ s.innerHTML=[['Words',w],['Characters',v.length],['No spaces',v.replace(/\s/g,'').length],['Sentences',(v.match(/[^.!?]+[.!?]+/g)||[]).length],['Min to read',Math.ceil(w/200)]].map(a=>`<div><b>${a[1]}</b><span>${a[0]}</span></div>`).join('')};
+ t.oninput=u;u()}},
+{id:'case-converter',n:'Text Case Converter',c:'Text',d:'Upper, lower, title, sentence case',f(el){
+ el.innerHTML=`<textarea id="t" rows="8" placeholder="Your text"></textarea><div class="row"><button class="btn sec" data-m="u">UPPER</button><button class="btn sec" data-m="l">lower</button><button class="btn sec" data-m="t">Title Case</button><button class="btn sec" data-m="s">Sentence case</button></div><button class="btn" id="cp">Copy</button>`;
+ const t=$(el,'#t');const M={u:s=>s.toUpperCase(),l:s=>s.toLowerCase(),t:s=>s.toLowerCase().replace(/(^|[\s\-(])(\p{L})/gu,(m,a,b)=>a+b.toUpperCase()),s:s=>s.toLowerCase().replace(/(^\s*|[.!?]\s+)(\p{L})/gu,(m,a,b)=>a+b.toUpperCase())};
+ el.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>t.value=M[b.dataset.m](t.value));
+ $(el,'#cp').onclick=async e=>{try{await navigator.clipboard.writeText(t.value);e.target.textContent='Copied'}catch{e.target.textContent='Copy blocked – select text manually'}}}},
+{id:'remove-duplicate-lines',n:'Remove Duplicate Lines',c:'Text',d:'Keep only unique lines',f(el){
+ el.innerHTML=`<textarea id="t" rows="9" placeholder="One item per line"></textarea><label class="note"><input type="checkbox" id="ci" style="width:auto"> Ignore case</label><br><button class="btn" id="go">Remove duplicates</button><p class="st" id="st"></p>`;
+ $(el,'#go').onclick=()=>{const t=$(el,'#t'),ci=$(el,'#ci').checked,seen=new Set(),L=t.value.split('\n');const r=L.filter(l=>{const k=ci?l.toLowerCase():l;if(seen.has(k))return false;seen.add(k);return true});t.value=r.join('\n');$(el,'#st').textContent=(L.length-r.length)+' duplicate line(s) removed.'}}},
+{id:'password-generator',n:'Password Generator',c:'Text',d:'Strong random passwords',f(el){
+ el.innerHTML=`<p class="mono" id="pw">—</p><label>Length: <b id="ln">16</b></label><input type="range" id="r" min="8" max="64" value="16" style="padding:0"><div class="row note"><label><input type="checkbox" id="a" checked style="width:auto"> A–Z</label><label><input type="checkbox" id="b" checked style="width:auto"> a–z</label><label><input type="checkbox" id="c" checked style="width:auto"> 0–9</label><label><input type="checkbox" id="d" checked style="width:auto"> !@#</label></div><button class="btn" id="g">Generate</button><button class="btn sec" id="cp">Copy</button><p class="note">Generated in your browser with a cryptographic random source. Never sent anywhere.</p>`;
+ const sets={a:'ABCDEFGHIJKLMNOPQRSTUVWXYZ',b:'abcdefghijklmnopqrstuvwxyz',c:'0123456789',d:'!@#$%^&*()-_=+[]{}?'};
+ const gen=()=>{$(el,'#ln').textContent=$(el,'#r').value;const pool=Object.keys(sets).filter(k=>$(el,'#'+k).checked).map(k=>sets[k]).join('');if(!pool){$(el,'#pw').textContent='Select at least one set';return}
+ const n=+$(el,'#r').value,u=new Uint32Array(n),lim=Math.floor(4294967296/pool.length)*pool.length;let o='';while(o.length<n){crypto.getRandomValues(u);for(const v of u){if(v<lim&&o.length<n)o+=pool[v%pool.length]}}$(el,'#pw').textContent=o};
+ $(el,'#g').onclick=gen;$(el,'#r').oninput=gen;gen();
+ $(el,'#cp').onclick=async e=>{try{await navigator.clipboard.writeText($(el,'#pw').textContent);e.target.textContent='Copied'}catch{e.target.textContent='Copy blocked'}}}},
+{id:'age-calculator',n:'Age Calculator',c:'Text',d:'Exact age in years, months, days',f(el){
+ el.innerHTML=`<label>Date of birth</label><input type="date" id="d"><button class="btn" id="go">Calculate</button><p id="o" class="st"></p>`;
+ $(el,'#go').onclick=()=>{const v=$(el,'#d').value,o=$(el,'#o');if(!v){o.textContent='Pick a date.';return}const b=new Date(v+'T00:00:00'),n=new Date();if(b>n){o.textContent='Date is in the future.';return}
+ let y=n.getFullYear()-b.getFullYear(),m=n.getMonth()-b.getMonth(),d=n.getDate()-b.getDate();if(d<0){m--;d+=new Date(n.getFullYear(),n.getMonth(),0).getDate()}if(m<0){y--;m+=12}
+ o.innerHTML=`<b style="font-size:20px;color:var(--tx)">${y} years, ${m} months, ${d} days</b><br>${Math.floor((n-b)/864e5).toLocaleString()} days in total`}}},
+{id:'qr-code-generator',n:'QR Code Generator',c:'Text',d:'Link or text to QR, PNG download',f(el){
+ el.innerHTML=`<input id="t" placeholder="https://example.com or any text"><button class="btn" id="go">Generate</button><div id="q" style="margin:12px 0"></div><div id="o"></div>`;
+ $(el,'#go').onclick=()=>{const v=$(el,'#t').value.trim(),q=$(el,'#q'),o=$(el,'#o');q.innerHTML='';o.innerHTML='';if(!v)return;if(!window.QRCode){q.textContent='QR library failed to load. Check your connection.';return}
+ try{new QRCode(q,{text:v,width:256,height:256,correctLevel:QRCode.CorrectLevel.M})}catch(e){q.textContent='Text too long for a QR code.';return}
+ setTimeout(()=>{const c=q.querySelector('canvas');if(c)c.toBlob(b=>o.appendChild(dl(b,'qr.png')))},50)}}},
+{id:'image-to-pdf',n:'JPG / PNG to PDF',c:'PDF',d:'Combine images into one PDF',f(el){
+ ft(el,{a:'image/*',m:1,b:'Create PDF',run:async fs=>{const d=await PDFLib.PDFDocument.create();for(const f of fs){const c=await imgToCanvas(f,0,0,1);const im=await d.embedJpg(new Uint8Array(await (await blobOf(c,'image/jpeg',.92)).arrayBuffer()));d.addPage([im.width,im.height]).drawImage(im,{x:0,y:0,width:im.width,height:im.height})}
+ return{blob:new Blob([await d.save()],{type:'application/pdf'}),name:'images.pdf',msg:fs.length+' image(s), one per page, in the order selected.'}}})}},
+{id:'merge-pdf',n:'Merge PDF',c:'PDF',d:'Join several PDFs into one',f(el){
+ ft(el,{a:'application/pdf',m:1,b:'Merge PDFs',run:async fs=>{if(fs.length<2)throw new Error('Select at least 2 PDFs');const d=await PDFLib.PDFDocument.create();for(const f of fs){let s;try{s=await PDFLib.PDFDocument.load(await f.arrayBuffer())}catch{throw new Error(f.name+' is damaged or password-protected')}
+ (await d.copyPages(s,s.getPageIndices())).forEach(p=>d.addPage(p))}return{blob:new Blob([await d.save()],{type:'application/pdf'}),name:'merged.pdf',msg:d.getPageCount()+' pages total.'}}})}},
+{id:'image-resizer',n:'Image Resizer & Converter',c:'Image',d:'Resize, compress, JPG/PNG/WebP',f(el){
+ ft(el,{a:'image/*',b:'Process image',opt:`<div class="row"><div><label class="note">Width px</label><input id="w" type="number" min="1" placeholder="auto"></div><div><label class="note">Height px</label><input id="h" type="number" min="1" placeholder="auto"></div></div><p class="note" id="dim">Leave one blank to keep the aspect ratio. Fill both for exact dimensions.</p><div class="row"><div><label class="note">Format</label><select id="fm"><option value="image/jpeg">JPG</option><option value="image/png">PNG</option><option value="image/webp">WebP</option></select></div><div><label class="note">Quality (JPG/WebP)</label><input id="q" type="number" min="10" max="100" value="80"></div></div>`,
+ onpick:async(fs,e)=>{if(fs[0]){try{const b=await createImageBitmap(fs[0]);$(e,'#dim').textContent='Original: '+b.width+' × '+b.height+' px. Leave one box blank to keep the aspect ratio.'}catch{}}},
+ run:async(fs,bx)=>{const f=fs[0],bm=await createImageBitmap(f);let w=+$(bx,'#w').value,h=+$(bx,'#h').value;if(w&&!h)h=Math.round(bm.height*w/bm.width);else if(h&&!w)w=Math.round(bm.width*h/bm.height);else if(!w&&!h){w=bm.width;h=bm.height}
+ if(w*h>1e8)throw new Error('Target size too large for this device');const t=$(bx,'#fm').value,c=await imgToCanvas(f,w,h,t==='image/jpeg'),b=await blobOf(c,t,Math.min(100,Math.max(10,+$(bx,'#q').value||80))/100);
+ if(b.type!==t)throw new Error('This browser cannot export that format');const ext={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[t];
+ return{blob:b,name:f.name.replace(/\.[^.]+$/,'')+'-'+w+'x'+h+'.'+ext,msg:w+' × '+h+' px, '+(b.size/1024).toFixed(0)+' KB (original '+(f.size/1024).toFixed(0)+' KB).'}}})}},
+new{id:'resume-builder',n:'ATS Resume & Cover Letter',c:'Resume',d:'Live preview, PDF export, your facts only',f(el){
+ const S={tpl:'fresher'},esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+ const RF=[['name','Full name'],['title','Headline (optional)'],['email','Email'],['phone','Phone'],['loc','Location'],['links','Links (LinkedIn, portfolio)'],['sum','Summary (your own words)','ta'],['edu','Education','ta','Degree | Institution | Years\nOptional detail line\n\n(blank line between entries)'],['exp','Experience','ta','Job title | Company | Dates\nWhat you actually did\nAnother true bullet\n\n(blank line between jobs)'],['proj','Projects / achievements (true only)','ta'],['skills','Skills (comma separated)','ta'],['cert','Certifications (only ones you hold)','ta']];
+ const CF=[['company','Company'],['role','Role applying for'],['mgr','Hiring manager (optional)'],['p1','Why you want this role (your words)','ta'],['p2','Experience/skills to mention (your words)','ta']];
+ let tab='r';
+ el.innerHTML=`<div class="row"><button class="btn sec" data-t="r">Resume</button><button class="btn sec" data-t="c">Cover letter</button></div><div id="fm"></div><h2>Live preview</h2><div id="rv"></div><button class="btn" id="pdf">Download PDF</button><p class="note">Opens your phone’s print dialog. Choose “Save as PDF”. Layout is single-column plain text so applicant tracking systems can read it. Nothing is stored; refreshing the page clears everything.</p>`;
+ const fm=$(el,'#fm'),rv=$(el,'#rv');
+ const blocks=t=>String(t||'').split(/\n\s*\n/).map(b=>b.split('\n').map(l=>l.trim()).filter(Boolean)).filter(b=>b.length).map(b=>`<p><b>${esc(b[0])}</b></p>${b.length>1?'<ul>'+b.slice(1).map(l=>'<li>'+esc(l)+'</li>').join('')+'</ul>':''}`).join('');
+ const sec=(h,x)=>x?`<h3>${h}</h3>${x}`:'';
+ const draw=()=>{
+  if(tab==='c'){const d=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}),para=t=>String(t||'').split(/\n+/).filter(x=>x.trim()).map(x=>`<p style="margin:0 0 10px">${esc(x)}</p>`).join('');
+   rv.innerHTML=`<p><b>${esc(S.name)}</b><br>${[S.email,S.phone,S.loc].filter(Boolean).map(esc).join(' · ')}</p><p>${d}</p><p>${S.mgr?'Dear '+esc(S.mgr)+',':'Dear Hiring Manager,'}</p><p style="margin:0 0 10px">${S.role?'I am writing to apply for the '+esc(S.role)+' position'+(S.company?' at '+esc(S.company):'')+'.':'I am writing to apply for a position'+(S.company?' at '+esc(S.company):'')+'.'}</p>${para(S.p1)}${para(S.p2)}<p style="margin:0 0 10px">Thank you for your time and consideration. I would welcome the opportunity to discuss my application.</p><p>Sincerely,<br>${esc(S.name)}</p>`;return}
+  const order=S.tpl==='fresher'?['sum','edu','proj','skills','exp','cert']:['sum','exp','skills','edu','cert','proj'];
+  const H={sum:'Summary',edu:'Education',exp:'Experience',proj:'Projects & Achievements',skills:'Skills',cert:'Certifications'};
+  const body={sum:S.sum?'<p>'+esc(S.sum).replace(/\n/g,'<br>')+'</p>':'',edu:blocks(S.edu),exp:blocks(S.exp),proj:blocks(S.proj),cert:blocks(S.cert),skills:S.skills?'<p>'+S.skills.split(/[,\n]/).map(x=>esc(x.trim())).filter(Boolean).join(' · ')+'</p>':''};
+  rv.innerHTML=`<h1>${esc(S.name)||'Your Name'}</h1>${S.title?'<p>'+esc(S.title)+'</p>':''}<p>${[S.email,S.phone,S.loc,S.links].filter(Boolean).map(esc).join(' · ')}</p>`+order.map(k=>sec(H[k],body[k])).join('')};
+ const form=()=>{const F=tab==='r'?RF:CF;
+  fm.innerHTML=(tab==='r'?`<label class="note">Template</label><select id="tp"><option value="fresher">Fresher (education and projects first)</option><option value="exp">Experienced (experience first)</option></select>`:'<p class="note">Name and contact come from the Resume tab. Write the paragraphs yourself; the tool only formats them.</p>')+F.map(f=>`<label class="note">${f[1]}</label>`+(f[2]?`<textarea data-k="${f[0]}" rows="4" placeholder="${esc(f[3]||'')}"></textarea>`:`<input data-k="${f[0]}">`)).join('');
+  fm.querySelectorAll('[data-k]').forEach(i=>{i.value=S[i.dataset.k]||'';i.oninput=()=>{S[i.dataset.k]=i.value;draw()}});
+  const tp=$(fm,'#tp');if(tp){tp.value=S.tpl;tp.onchange=()=>{S.tpl=tp.value;draw()}}draw()};
+ el.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{tab=b.dataset.t;form()});
+ $(el,'#pdf').onclick=()=>{if(!S.name){alert('Enter your name first.');return}window.print()};
+ form()}},
+{id:'pdf-pages',n:'Extract / Delete / Rotate Pages',c:'PDF',d:'Pick pages, reorder, remove or rotate',f(el){
+ ft(el,{a:'application/pdf',b:'Apply',opt:`<label class="note">Action</label><select id="md"><option value="x">Extract pages (order matters: 3,1,2)</option><option value="d">Delete pages</option><option value="r">Rotate pages</option></select><label class="note">Pages, e.g. 1-3,5 (blank = all, Rotate only)</label><input id="pg" placeholder="1-3,5"><label class="note">Rotation (Rotate only)</label><select id="rt"><option>90</option><option>180</option><option>270</option></select>`,
+ run:async(fs,bx)=>{const D=PDFLib.PDFDocument;let s;try{s=await D.load(await fs[0].arrayBuffer())}catch{throw new Error('PDF is damaged or password-protected')}
+  const n=s.getPageCount(),txt=$(bx,'#pg').value.trim(),md=$(bx,'#md').value;let L=[];
+  if(!txt){if(md!=='r')throw new Error('Enter page numbers');L=[...Array(n).keys()]}
+  else for(const p of txt.split(',')){const m=p.trim().match(/^(\d+)(?:-(\d+))?$/);if(!m)throw new Error('Invalid range "'+p.trim()+'"');const a=+m[1],b=+(m[2]||m[1]);if(a<1||b>n||a>b)throw new Error('Pages must be between 1 and '+n);for(let i=a;i<=b;i++)L.push(i-1)}
+  let d=s,nm='pages';
+  if(md==='x'){d=await D.create();(await d.copyPages(s,L)).forEach(p=>d.addPage(p));nm='extracted'}
+  else if(md==='d'){const u=[...new Set(L)];if(u.length>=n)throw new Error('Cannot delete every page');u.sort((a,b)=>b-a).forEach(i=>s.removePage(i));nm='edited'}
+  else{const r=+$(bx,'#rt').value;L.forEach(i=>{const p=s.getPage(i);p.setRotation(PDFLib.degrees((p.getRotation().angle+r)%360))});nm='rotated'}
+  return{blob:new Blob([await d.save()],{type:'application/pdf'}),name:nm+'.pdf',msg:d.getPageCount()+' page(s) in the result (original had '+n+').'}}})}},
+{id:'date-calculator',n:'Date Calculator',c:'Text',d:'Days between dates, add or subtract days',f(el){
+ el.innerHTML=`<h2>Difference between two dates</h2><div class="row"><input type="date" id="a"><input type="date" id="b"></div><p class="st" id="o1"></p><h2>Add or subtract days</h2><div class="row"><input type="date" id="c"><input type="number" id="n" placeholder="Days (negative to subtract)"></div><p class="st" id="o2"></p>`;
+ const U=v=>new Date(v+'T00:00:00Z');
+ const d1=()=>{const a=$(el,'#a').value,b=$(el,'#b').value,o=$(el,'#o1');if(!a||!b){o.textContent='';return}const n=Math.round((U(b)-U(a))/864e5),k=Math.abs(n);o.innerHTML=`<b style="color:var(--tx)">${k.toLocaleString()} days</b> (${Math.floor(k/7)} weeks, ${k%7} days)${n<0?' – second date is earlier':''}`};
+ const d2=()=>{const c=$(el,'#c').value,n=$(el,'#n').value,o=$(el,'#o2');if(!c||n===''){o.textContent='';return}const d=U(c);d.setUTCDate(d.getUTCDate()+Math.trunc(+n));o.innerHTML=`<b style="color:var(--tx)">${d.toUTCString().slice(0,16)}</b>`};
+ ['a','b'].forEach(i=>$(el,'#'+i).oninput=d1);['c','n'].forEach(i=>$(el,'#'+i).oninput=d2)}},
+{id:'compress-pdf',n:'Compress PDF',c:'PDF',d:'Planned: needs a heavier library',soon:1},
+{id:'pdf-to-jpg',n:'PDF to JPG',c:'PDF',d:'Planned: needs PDF.js',soon:1},
+{id:'crop',n:'Image Crop',c:'Image',d:'Planned',soon:1},
+{id:'pdf-to-word',n:'PDF ⇄ Word',c:'PDF',d:'Needs server; see notes',soon:1}
+];
+
+function card(t){return t.soon?`<div class="card soon"><b>${t.n}</b><small>${t.d}</small> <span class="tag">Soon</span></div>`:`<a class="card" href="#${t.id}"><b>${t.n}</b><small>${t.d}</small></a>`}
+function home(q=''){
+ const app=document.getElementById('app');q=q.toLowerCase();
+ const cats=[...new Set(TOOLS.map(t=>t.c))];
+ app.innerHTML=`<section class="hero"><h1>Free tools for PDFs, images and text</h1><p>Everything runs on your device. No sign-up, no uploads.</p><input id="s" type="search" placeholder="Search tools (e.g. merge, resize, QR)" value="${q}"></section><div id="l"></div>`;
+ const s=$(app,'#s'),l=$(app,'#l');
+ const draw=()=>{const v=s.value.toLowerCase();l.innerHTML=cats.map(c=>{const a=TOOLS.filter(t=>t.c===c&&(t.n+t.d).toLowerCase().includes(v));return a.length?`<h2>${c}</h2><div class="grid">${a.map(card).join('')}</div>`:''}).join('')||'<p class="note">No tool matches that search.</p>'};
+ s.oninput=draw;draw()}
+function tool(t){
+ const app=document.getElementById('app');
+ app.innerHTML=`<p><a href="#home" style="color:var(--ac)">← All tools</a></p><h1 style="margin:0">${t.n}</h1><p class="note">${t.d}. Processed locally in your browser.</p><div class="panel" id="p"></div>`;
+ t.f($(app,'#p'));document.title=t.n+' – ToolBox'}
+function route(){const id=location.hash.slice(1),t=TOOLS.find(x=>x.id===id&&!x.soon);t?tool(t):home();window.scrollTo(0,0)}
+addEventListener('hashchange',route);route();
+document.getElementById('th').onclick=()=>{const r=document.documentElement,d=r.dataset.theme==='dark'||(!r.dataset.theme&&matchMedia('(prefers-color-scheme:dark)').matches);r.dataset.theme=d?'light':'dark'};
+</script></body></html>
